@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Summarizer</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
+        h1 { text-align: center; }
+        .container { width: 50%; margin: 0 auto; }
+        input[type="file"], select, button { width: 100%; padding: 10px; margin: 10px 0; }
+        textarea { width: 100%; padding: 10px; height: 200px; margin: 10px 0; }
+        #message { text-align: center; padding: 10px; margin-top: 20px; font-size: 1.2em; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Document Summarizer</h1>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <label for="file">Choose document file (PDF, DOCX, TXT):</label>
+            <input type="file" name="file" id="file" accept=".pdf, .docx, .txt" required><br>
+
+            <label for="summary_type">Summary Type:</label>
+            <select name="summary_type" id="summary_type" required>
+                <option value="short">Short</option>
+                <option value="medium">Medium</option>
+                <option value="long">Long</option>
+            </select><br>
+
+            <label for="model">Model:</label>
+            <select name="model" id="model" required>
+                <option value="bart">BART</option>
+                <option value="pegasus">Pegasus</option>
+            </select><br>
+
+            <button type="submit">Upload and Summarize</button>
+        </form>
+
+        <div id="message"></div>
+
+        <h3>Generated Summary:</h3>
+        <textarea id="summary" readonly></textarea>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const formData = new FormData();
+            formData.append("file", document.getElementById('file').files[0]);
+            formData.append("summary_type", document.getElementById('summary_type').value);
+            formData.append("model", document.getElementById('model').value);
+
+            const messageElement = document.getElementById('message');
+            const summaryElement = document.getElementById('summary');
+
+            try {
+                // Clear previous messages
+                messageElement.textContent = '';
+                summaryElement.value = '';
+
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageElement.textContent = 'Document uploaded and summarized successfully!';
+                    messageElement.className = 'success';
+                    summaryElement.value = result.summary;
+                } else {
+                    messageElement.textContent = `Error: ${result.error}`;
+                    messageElement.className = 'error';
+                }
+            } catch (error) {
+                messageElement.textContent = `Error: ${error.message}`;
+                messageElement.className = 'error';
+            }
+        });
+    </script>
+</body>
+</html>
